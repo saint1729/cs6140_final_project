@@ -88,7 +88,7 @@ def main(args):
             X_test = X_test.unsqueeze(1).float()
             y_val = model(X_test)
             color_img = decode(X_test, y_val)
-            color_name = '../data/colorimg/temp.jpeg'
+            color_name = '../data/colorimg/' + str(b + 1) + '.jpeg'
             imageio.imsave(color_name, color_img * 255.)
 
 
