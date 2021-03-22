@@ -1,12 +1,14 @@
 import argparse
 import os
+import time
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import imageio
 from torchvision import transforms, datasets
 import numpy as np
-from training_layers import PriorBoostLayer, NNEncLayer, ClassRebalanceMultLayer, NonGrayMaskLayer, decode
+from training_layers import PriorBoostLayer, NNEncLayer, NonGrayMaskLayer, decode
 from data_loader import TrainImageFolder
 from model import Color_model
 
@@ -46,6 +48,7 @@ def main(args):
 
     # Train the models
     total_step = len(data_loader)
+    start_time = time.time()
     for epoch in range(args.num_epochs):
         for i, (images, img_ab) in enumerate(data_loader):
             try:
@@ -83,6 +86,8 @@ def main(args):
             except:
                 pass
 
+    print(f"Total time: {time.time() - start_time}")
+
     with torch.no_grad():
         for b, (X_test, y_test) in enumerate(test_loader):
             X_test = X_test.unsqueeze(1).float()
@@ -96,12 +101,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', type=str, default='../model/models/', help='path for saving trained models')
     parser.add_argument('--crop_size', type=int, default=224, help='size for randomly cropping images')
-    parser.add_argument('--image_dir', type=str, default='../data/CATS_DOGS/sample_train', help='directory for resized images')
+    parser.add_argument('--image_dir', type=str, default='../data/CATS_DOGS/train/CAT', help='directory for resized images')
     parser.add_argument('--log_step', type=int, default=1, help='step size for prining log info')
     parser.add_argument('--save_step', type=int, default=216, help='step size for saving trained models')
 
     # Model parameters
-    parser.add_argument('--num_epochs', type=int, default=10)
+    parser.add_argument('--num_epochs', type=int, default=1)
     parser.add_argument('--batch_size', type=int, default=60)
     parser.add_argument('--num_workers', type=int, default=8)
     parser.add_argument('--learning_rate', type=float, default=1e-3)
