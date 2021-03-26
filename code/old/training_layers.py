@@ -16,7 +16,7 @@ class NNEncLayer(object):
     def __init__(self):
         self.NN = 32
         self.sigma = 0.5
-        self.ENC_DIR = './resources/'
+        self.ENC_DIR = 'resources/'
         self.nnenc = NNEncode(self.NN, self.sigma, km_filepath=os.path.join(self.ENC_DIR, 'pts_in_hull.npy'))
 
         self.X = 224
@@ -24,10 +24,10 @@ class NNEncLayer(object):
         self.Q = self.nnenc.K
 
     def forward(self, x):
-        #return np.argmax(self.nnenc.encode_points_mtx_nd(x), axis=1).astype(np.int32)
-        encode=self.nnenc.encode_points_mtx_nd(x)
-        max_encode=np.argmax(encode,axis=1).astype(np.int32)
-        return encode,max_encode
+        # return np.argmax(self.nnenc.encode_points_mtx_nd(x), axis=1).astype(np.int32)
+        encode = self.nnenc.encode_points_mtx_nd(x)
+        max_encode = np.argmax(encode, axis=1).astype(np.int32)
+        return encode, max_encode
 
     def reshape(self, bottom, top):
         top[0].reshape(self.N, self.Q, self.X, self.Y)
@@ -42,14 +42,13 @@ class PriorBoostLayer(object):
     '''
 
     def __init__(self, ENC_DIR='./resources/', gamma=0.5, alpha=1.0):
-        self.ENC_DIR = './resources/'
+        self.ENC_DIR = 'resources/'
         self.gamma = .5
         self.alpha = 1.
         self.pc = PriorFactor(self.alpha, gamma=self.gamma, priorFile=os.path.join(self.ENC_DIR, 'prior_probs.npy'))
 
         self.X = 224
         self.Y = 224
-
 
     def forward(self, bottom):
         return self.pc.forward(bottom, axis=1)
@@ -74,10 +73,10 @@ class NonGrayMaskLayer(object):
         self.Y = bottom.data.shape[3]
 
     def forward(self, bottom):
-        bottom=bottom.numpy()
+        bottom = bottom.numpy()
         # if an image has any (a,b) value which exceeds threshold, output 1
         return (np.sum(np.sum(np.sum((np.abs(bottom) > 5).astype('float'), axis=1), axis=1), axis=1) > 0)[:,
-                           na(), na(), na()].astype('float')
+               na(), na(), na()].astype('float')
 
 
 # ***************************
@@ -116,9 +115,8 @@ class PriorFactor():
         self.implied_prior = self.prior_probs * self.prior_factor
         self.implied_prior = self.implied_prior / np.sum(self.implied_prior)  # re-normalize
 
-        #if (self.verbose):
+        # if (self.verbose):
         #    self.print_correction_stats()
-
 
     def forward(self, data_ab_quant, axis=1):
         data_ab_maxind = np.argmax(data_ab_quant, axis=axis)
@@ -165,11 +163,10 @@ class NNEncode():
         wts = np.exp(-dists ** 2 / (2 * self.sigma ** 2))
         wts = wts / np.sum(wts, axis=1)[:, na()]
         self.pts_enc_flt[self.p_inds, inds] = wts
-        
-        
+
         pts_enc_nd = unflatten_2d_array(self.pts_enc_flt, pts_nd, axis=axis)
         return pts_enc_nd
-    
+
 
 # *****************************
 # ***** Utility functions *****
@@ -236,26 +233,26 @@ def unflatten_2d_array(pts_flt, pts_nd, axis=1, squeeze=False):
 
 
 def decode(data_l, conv8_313, rebalance=1):
-    #print('data_l',type(data_l))
-    #print('shape',data_l.shape)
-    #np.save('data_l.npy',data_l)
-    data_l=data_l[0]+50
-    data_l=data_l.cpu().data.numpy().transpose((1,2,0))
+    # print('data_l',type(data_l))
+    # print('shape',data_l.shape)
+    # np.save('data_l.npy',data_l)
+    data_l = data_l[0] + 50
+    data_l = data_l.cpu().data.numpy().transpose((1, 2, 0))
     conv8_313 = conv8_313[0]
-    enc_dir = './resources'
+    enc_dir = 'resources'
     conv8_313_rh = conv8_313 * rebalance
-    #print('conv8',conv8_313_rh.size())
-    class8_313_rh = F.softmax(conv8_313_rh,dim=0).cpu().data.numpy().transpose((1,2,0))
-    #np.save('class8_313.npy',class8_313_rh)
-    class8=np.argmax(class8_313_rh,axis=-1)
-    #print('class8',class8.shape)
+    # print('conv8',conv8_313_rh.size())
+    class8_313_rh = F.softmax(conv8_313_rh, dim=0).cpu().data.numpy().transpose((1, 2, 0))
+    # np.save('class8_313.npy',class8_313_rh)
+    class8 = np.argmax(class8_313_rh, axis=-1)
+    # print('class8',class8.shape)
     cc = np.load(os.path.join(enc_dir, 'pts_in_hull.npy'))
-    #data_ab = np.dot(class8_313_rh, cc)
-    data_ab=cc[class8[:][:]]
-    #data_ab=np.transpose(data_ab,axes=(1,2,0))
-    #data_l=np.transpose(data_l,axes=(1,2,0))
-    #data_ab = resize(data_ab, (224, 224,2))
-    data_ab=data_ab.repeat(4, axis=0).repeat(4, axis=1)
+    # data_ab = np.dot(class8_313_rh, cc)
+    data_ab = cc[class8[:][:]]
+    # data_ab=np.transpose(data_ab,axes=(1,2,0))
+    # data_l=np.transpose(data_l,axes=(1,2,0))
+    # data_ab = resize(data_ab, (224, 224,2))
+    data_ab = data_ab.repeat(4, axis=0).repeat(4, axis=1)
     s_ab = data_ab.shape
     s_l = data_l.shape
     x, y = min(s_ab[0], s_l[0]), min(s_ab[1], s_l[1])
